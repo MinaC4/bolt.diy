@@ -11,6 +11,12 @@ import * as dotenv from 'dotenv';
 // for Request.cf during local dev, which causes 3-second TimeoutError warnings.
 process.env.CLOUDFLARE_CF_FETCH_ENABLED ??= 'false';
 
+const previewAllowedHosts = [
+  'localhost',
+  '127.0.0.1',
+  ...(process.env.PREVIEW_ALLOWED_HOSTS?.split(',').map((host) => host.trim()).filter(Boolean) ?? []),
+];
+
 // Load environment variables without duplicate loading or console noise
 dotenv.config({ path: ['.env.local', '.env'], quiet: true });
 
@@ -26,6 +32,9 @@ export default defineConfig((config) => {
     },
     build: {
       target: 'esnext',
+    },
+    preview: {
+      allowedHosts: previewAllowedHosts,
     },
     optimizeDeps: {
       include: [

@@ -29,7 +29,7 @@ spec:
       containers:
         - name: bolt-diy
           image: ghcr.io/minac4/bolt.diy:cluster-deploy
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           ports:
             - name: http
               containerPort: 5173
@@ -47,6 +47,8 @@ spec:
               value: info
             - name: DEFAULT_NUM_CTX
               value: '32768'
+            - name: PREVIEW_ALLOWED_HOSTS
+              value: bolt.192.168.1.3.nip.io
           resources:
             requests:
               cpu: 250m

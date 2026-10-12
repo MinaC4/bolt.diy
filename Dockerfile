@@ -50,10 +50,6 @@ ENV WRANGLER_SEND_METRICS=false \
 # Note: API keys should be provided at runtime via docker run -e or docker-compose
 # Example: docker run -e OPENAI_API_KEY=your_key_here ...
 
-# Install curl for healthchecks
-RUN apt-get update && apt-get install -y --no-install-recommends curl \
-  && rm -rf /var/lib/apt/lists/*
-
 # Pre-configure wrangler to disable metrics
 RUN mkdir -p /root/.config/.wrangler && \
     echo '{"enabled":false}' > /root/.config/.wrangler/metrics.json
@@ -62,7 +58,7 @@ EXPOSE 5173
 
 # Healthcheck for deployment platforms
 HEALTHCHECK --interval=10s --timeout=3s --start-period=5s --retries=5 \
-  CMD curl -fsS http://localhost:5173/ || exit 1
+  CMD ["node", "-e", "fetch('http://127.0.0.1:5173/').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
 
 # Start using dockerstart script with Wrangler
 CMD ["pnpm", "run", "dockerstart"]

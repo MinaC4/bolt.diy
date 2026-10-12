@@ -18,12 +18,22 @@ The script asks cert-manager to issue a LAN certificate from the cluster's
 existing gateway CA, adds that certificate to the existing HTTPS listener while
 preserving its current certificate, creates the Deployment and Service, and
 waits until the pod is ready.
+It selects the immutable GHCR image built from the checked-out Git commit.
+It also ensures the existing cert-manager components and HTTPS Gateway are
+running so the certificate can be issued and the route can accept TLS.
 
 Open https://bolt.192.168.1.3.nip.io:18443 from a device on the same LAN. The
 name resolves to the current LAN address used by this cluster. If that address
 changes, update the hostname in certificate.yaml and app.yaml, reissue the
 certificate, and use the gateway's updated address. The device must trust the
 LAN root CA for secure browser features such as WebContainers.
+
+To export the public LAN root certificate from the cluster on macOS:
+
+    kubectl get secret cluster-gateway-ca -n openchoreo-control-plane -o jsonpath='{.data.tls\.crt}' | base64 -D > openchoreo-lan-root-ca.crt
+
+Install that certificate as a trusted root on each device before opening the
+app. The file contains only the public certificate, not its private key.
 
 ## Restart and saved work
 
@@ -39,10 +49,9 @@ when Docker Desktop and the cluster start again, but the app is unavailable
 while the host computer is off. This route is LAN-only; access away from home
 requires a VPN or a separately configured public domain and ingress.
 
-After publishing a later image to the same tag, apply it with:
+To update the app, pull the latest branch, wait for its Docker Publish workflow,
+and run the deploy script again. It switches to that commit's image tag.
 
-    kubectl rollout restart deployment/bolt-diy --namespace bolt-diy
-    kubectl rollout status deployment/bolt-diy --namespace bolt-diy
 
 ## Checks
 

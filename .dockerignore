@@ -1,6 +1,7 @@
 # Ignore Git and GitHub files
 .git
 .github/
+deploy/
 
 # Ignore Husky configuration files
 .husky/
