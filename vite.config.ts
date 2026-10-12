@@ -144,14 +144,25 @@ export default defineConfig((config) => {
         build: {
           manifest: true,
           /*
-           * Keep the browser application in one JS bundle. The CommonJS
-           * browser shims currently trigger a Rolldown cross-chunk cycle:
-           * its runtime chunk imports a helper from the entry chunk before
-           * that helper is initialized, so React never mounts. The server
-           * environment keeps normal code splitting.
+           * Keep the CommonJS browser shims and their transitive dependencies
+           * together. Splitting their generated module wrappers across chunks
+           * creates a cycle between Rolldown's runtime and the entry chunk,
+           * throwing before React mounts.
            */
           rolldownOptions: {
-            output: { codeSplitting: false },
+            output: {
+              strictExecutionOrder: true,
+              codeSplitting: {
+                groups: [
+                  {
+                    name: 'browser-polyfills',
+                    test: /vite-plugin-node-polyfills|node_modules[\\/](buffer|process|base64-js|ieee754)[\\/]/,
+                    includeDependenciesRecursively: true,
+                    priority: 100,
+                  },
+                ],
+              },
+            },
           },
         },
       },
