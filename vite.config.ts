@@ -32,6 +32,19 @@ export default defineConfig((config) => {
     },
     build: {
       target: 'esnext',
+      /*
+       * Buffer and process browser shims are CommonJS packages wrapped by
+       * Rolldown. The generated commonjs helpers can otherwise be split into
+       * a chunk that imports back from the application entry chunk, leaving a
+       * helper uninitialized during module evaluation (the browser then fails
+       * before React mounts). Preserve module execution order in the client
+       * bundle so those wrappers initialize before their consumers.
+       */
+      rolldownOptions: {
+        output: {
+          strictExecutionOrder: true,
+        },
+      },
     },
     preview: {
       allowedHosts: previewAllowedHosts,
