@@ -75,6 +75,42 @@ const inlineThemeCode = stripIndents`
   }
 `;
 
+const bootDiagnosticsCode = String.raw`
+  if (new URLSearchParams(window.location.search).has('debug')) {
+    const report = (label, detail) => {
+      if (!document.body) {
+        document.addEventListener('DOMContentLoaded', () => report(label, detail), { once: true });
+        return;
+      }
+      let panel = document.getElementById('bolt-boot-diagnostics');
+      if (!panel) {
+        panel = document.createElement('pre');
+        panel.id = 'bolt-boot-diagnostics';
+        panel.style.cssText = 'position:fixed;inset:auto 12px 12px 12px;z-index:2147483647;max-height:45vh;overflow:auto;margin:0;padding:12px;background:#101114;color:#f4f4f5;border:1px solid #71717a;border-radius:8px;font:12px/1.5 ui-monospace,monospace;white-space:pre-wrap;';
+        document.body.appendChild(panel);
+      }
+      panel.textContent += (panel.textContent ? '\n' : '') + label + ': ' + detail;
+    };
+
+    window.addEventListener('error', (event) => {
+      const target = event.target;
+      const resource = target && target !== window ? (target.src || target.href || target.tagName) : '';
+      report('error', [event.message, resource, event.filename, event.lineno].filter(Boolean).join(' | ') || 'Unknown browser error');
+    }, true);
+
+    window.addEventListener('unhandledrejection', (event) => {
+      const reason = event.reason;
+      report('unhandled rejection', reason && (reason.stack || reason.message) || String(reason));
+    });
+
+    window.addEventListener('load', () => {
+      window.setTimeout(() => {
+        report('browser state', 'secure=' + window.isSecureContext + ', crossOriginIsolated=' + window.crossOriginIsolated + ', bodyTextLength=' + document.body.innerText.length + ', rootChildren=' + document.body.children.length);
+      }, 3000);
+    }, { once: true });
+  }
+`;
+
 export function Layout({ children }: { children: React.ReactNode }) {
   const theme = useStore(themeStore);
 
@@ -94,6 +130,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <script dangerouslySetInnerHTML={{ __html: bootDiagnosticsCode }} />
         <Meta />
         <Links />
         <script dangerouslySetInnerHTML={{ __html: inlineThemeCode }} />
