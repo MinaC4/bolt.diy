@@ -60,7 +60,6 @@ export default class OpenRouterProvider extends BaseProvider {
           'Content-Type': 'application/json',
           ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
         },
-        signal: AbortSignal.timeout(15_000),
       });
 
       if (!response.ok) {
