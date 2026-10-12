@@ -236,18 +236,6 @@ export default defineConfig((config) => {
  * plugin is restricted to the client environment.
  */
 function browserPolyfills() {
-  const shims = 'vite-plugin-node-polyfills/shims';
-  const prelude = [
-    `import { Buffer as __boltBuffer } from '${shims}/buffer';`,
-    `import __boltProcess from '${shims}/process';`,
-    `globalThis.Buffer ??= __boltBuffer;`,
-    `globalThis.process ??= __boltProcess;`,
-    `globalThis.global ??= globalThis;`,
-  ].join('\n');
-
-  /* Only touch modules that actually reference one of the globals. */
-  const needsPolyfill = /(^|[^\w.$])(Buffer|process|global)([^\w$]|$)/;
-
   /*
    * Vite externalizes Node builtins for the browser before `resolve.alias` is
    * applied ("Module 'buffer' has been externalized for browser compatibility"),
@@ -272,23 +260,6 @@ function browserPolyfills() {
     },
     resolveId(source: string) {
       return builtinAliases[source] ?? null;
-    },
-    transform(code: string, id: string) {
-      // Skip node_modules except for specific ones that need polyfills
-      if (id.includes('node_modules')) {
-        // Only inject polyfills for path-browserify and other packages that need them
-        if (!id.includes('path-browserify')) {
-          return null;
-        }
-      } else if (!/\.[cm]?[jt]sx?$/.test(id.split('?')[0])) {
-        return null;
-      }
-
-      if (!needsPolyfill.test(code)) {
-        return null;
-      }
-
-      return { code: `${prelude}\n${code}`, map: null };
     },
   };
 }
