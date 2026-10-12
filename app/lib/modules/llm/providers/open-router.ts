@@ -7,10 +7,10 @@ import type { IProviderSetting } from '~/types/model';
 interface OpenRouterModel {
   name: string;
   id: string;
-  context_length: number;
+  context_length?: number;
   pricing: {
-    prompt: number;
-    completion: number;
+    prompt: string | number;
+    completion: string | number;
   };
 }
 
@@ -49,20 +49,32 @@ export default class OpenRouterProvider extends BaseProvider {
   ];
 
   async getDynamicModels(
-    _apiKeys?: Record<string, string>,
+    apiKeys?: Record<string, string>,
     _settings?: IProviderSetting,
     _serverEnv: Record<string, string> = {},
   ): Promise<ModelInfo[]> {
     try {
+      const apiKey = apiKeys?.[this.name];
       const response = await fetch('https://openrouter.ai/api/v1/models', {
         headers: {
           'Content-Type': 'application/json',
+          ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
         },
+        signal: AbortSignal.timeout(15_000),
       });
+
+      if (!response.ok) {
+        throw new Error(`OpenRouter model request failed: ${response.status} ${response.statusText}`);
+      }
 
       const data = (await response.json()) as OpenRouterModelsResponse;
 
+      if (!Array.isArray(data.data)) {
+        throw new Error('OpenRouter returned an invalid model list');
+      }
+
       return data.data
+        .filter((model) => model.id && model.name && model.pricing)
         .sort((a, b) => a.name.localeCompare(b.name))
         .map((m) => {
           // Get accurate context window from OpenRouter API
@@ -72,9 +84,15 @@ export default class OpenRouterProvider extends BaseProvider {
           const maxAllowed = 2000000; // 2M tokens max for safety
           const finalContext = Math.min(contextWindow, maxAllowed);
 
+          const inputPrice = Number(m.pricing.prompt);
+          const outputPrice = Number(m.pricing.completion);
+          const pricesLabel = Number.isFinite(inputPrice) && Number.isFinite(outputPrice)
+            ? ` - in:$${(inputPrice * 1_000_000).toFixed(2)} out:$${(outputPrice * 1_000_000).toFixed(2)}`
+            : '';
+
           return {
             name: m.id,
-            label: `${m.name} - in:$${(m.pricing.prompt * 1_000_000).toFixed(2)} out:$${(m.pricing.completion * 1_000_000).toFixed(2)} - context ${finalContext >= 1000000 ? Math.floor(finalContext / 1000000) + 'M' : Math.floor(finalContext / 1000) + 'k'}`,
+            label: `${m.name}${pricesLabel} - context ${finalContext >= 1000000 ? Math.floor(finalContext / 1000000) + 'M' : Math.floor(finalContext / 1000) + 'k'}`,
             provider: this.name,
             maxTokenAllowed: finalContext,
           };
