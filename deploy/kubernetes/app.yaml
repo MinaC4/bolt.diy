@@ -1,0 +1,117 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: bolt-diy
+  labels:
+    app.kubernetes.io/part-of: bolt-diy
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bolt-diy
+  namespace: bolt-diy
+  labels:
+    app.kubernetes.io/name: bolt-diy
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: bolt-diy
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: bolt-diy
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: bolt-diy
+          image: ghcr.io/minac4/bolt.diy:cluster-deploy
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 5173
+              protocol: TCP
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: PORT
+              value: '5173'
+            - name: HOST
+              value: 0.0.0.0
+            - name: RUNNING_IN_DOCKER
+              value: 'true'
+            - name: VITE_LOG_LEVEL
+              value: info
+            - name: DEFAULT_NUM_CTX
+              value: '32768'
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: '1'
+              memory: 1Gi
+          startupProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 24
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 30
+            timeoutSeconds: 3
+            failureThreshold: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bolt-diy
+  namespace: bolt-diy
+  labels:
+    app.kubernetes.io/name: bolt-diy
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: bolt-diy
+  ports:
+    - name: http
+      port: 5173
+      targetPort: http
+      protocol: TCP
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: bolt-diy
+  namespace: bolt-diy
+  labels:
+    app.kubernetes.io/name: bolt-diy
+spec:
+  hostnames:
+    - bolt.192.168.1.3.nip.io
+  parentRefs:
+    - name: gateway-default
+      namespace: openchoreo-control-plane
+      sectionName: https
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: bolt-diy
+          port: 5173

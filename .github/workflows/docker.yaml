@@ -2,7 +2,9 @@ name: Docker Publish
 
 on:
   push:
-    branches: [main, stable]
+    # Build a dedicated image for the user's Kubernetes deployment branch.
+    # This tag is kept separate from the upstream latest/stable tags.
+    branches: [main, stable, codex/cluster-deploy]
     tags: ['v*', '*.*.*']
   workflow_dispatch:
 
@@ -48,6 +50,7 @@ jobs:
           tags: |
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
             type=raw,value=stable,enable=${{ github.ref == 'refs/heads/stable' }}
+            type=raw,value=cluster-deploy,enable=${{ github.ref == 'refs/heads/codex/cluster-deploy' }}
             type=ref,event=tag
             type=sha,format=short
             type=raw,value=${{ github.ref_name }},enable=${{ startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/stable' }}

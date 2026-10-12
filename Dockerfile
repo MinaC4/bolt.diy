@@ -29,15 +29,8 @@ RUN pnpm install --offline --frozen-lockfile
 # Build the Remix app (SSR + client)
 RUN NODE_OPTIONS=--max-old-space-size=4096 pnpm run build
 
-# ---- production dependencies stage ----
-FROM build AS prod-deps
-
-# Keep only production deps for runtime
-RUN pnpm prune --prod --ignore-scripts
-
-
 # ---- production stage ----
-FROM prod-deps AS bolt-ai-production
+FROM build AS bolt-ai-production
 WORKDIR /app
 
 ENV NODE_ENV=production
@@ -60,12 +53,6 @@ ENV WRANGLER_SEND_METRICS=false \
 # Install curl for healthchecks
 RUN apt-get update && apt-get install -y --no-install-recommends curl \
   && rm -rf /var/lib/apt/lists/*
-
-# Copy built files
-COPY --from=prod-deps /app/build /app/build
-COPY --from=prod-deps /app/node_modules /app/node_modules
-COPY --from=prod-deps /app/package.json /app/package.json
-COPY --from=prod-deps /app/wrangler.jsonc /app/wrangler.jsonc
 
 # Pre-configure wrangler to disable metrics
 RUN mkdir -p /root/.config/.wrangler && \
