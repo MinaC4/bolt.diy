@@ -32,19 +32,6 @@ export default defineConfig((config) => {
     },
     build: {
       target: 'esnext',
-      /*
-       * Buffer and process browser shims are CommonJS packages wrapped by
-       * Rolldown. The generated commonjs helpers can otherwise be split into
-       * a chunk that imports back from the application entry chunk, leaving a
-       * helper uninitialized during module evaluation (the browser then fails
-       * before React mounts). Preserve module execution order in the client
-       * bundle so those wrappers initialize before their consumers.
-       */
-      rolldownOptions: {
-        output: {
-          strictExecutionOrder: true,
-        },
-      },
     },
     preview: {
       allowedHosts: previewAllowedHosts,
@@ -154,7 +141,19 @@ export default defineConfig((config) => {
          * parallel with the client build, so the client manifest has to be
          * requested explicitly or React Router fails with ENOENT.
          */
-        build: { manifest: true },
+        build: {
+          manifest: true,
+          /*
+           * Keep the browser application in one JS bundle. The CommonJS
+           * browser shims currently trigger a Rolldown cross-chunk cycle:
+           * its runtime chunk imports a helper from the entry chunk before
+           * that helper is initialized, so React never mounts. The server
+           * environment keeps normal code splitting.
+           */
+          rolldownOptions: {
+            output: { codeSplitting: false },
+          },
+        },
       },
     },
     plugins: [
