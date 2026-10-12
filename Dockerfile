@@ -10,7 +10,7 @@ ENV CI=true
 RUN corepack enable && corepack prepare pnpm@9.15.9 --activate
 
 # Ensure git is available for build and runtime scripts
-RUN apt-get update && apt-get install -y --no-install-recommends git \
+RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates \
   && rm -rf /var/lib/apt/lists/*
 
 # Accept (optional) build-time public URL for Remix/Vite (Coolify can pass it)
@@ -43,6 +43,7 @@ ARG DEFAULT_NUM_CTX
 
 # Set non-sensitive environment variables
 ENV WRANGLER_SEND_METRICS=false \
+    NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt \
     VITE_LOG_LEVEL=${VITE_LOG_LEVEL} \
     DEFAULT_NUM_CTX=${DEFAULT_NUM_CTX} \
     RUNNING_IN_DOCKER=true
