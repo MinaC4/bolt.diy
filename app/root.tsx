@@ -95,7 +95,8 @@ const bootDiagnosticsCode = String.raw`
     window.addEventListener('error', (event) => {
       const target = event.target;
       const resource = target && target !== window ? (target.src || target.href || target.tagName) : '';
-      report('error', [event.message, resource, event.filename, event.lineno].filter(Boolean).join(' | ') || 'Unknown browser error');
+      const stack = event.error && event.error.stack;
+      report('error', [event.message, resource, event.filename, event.lineno, stack].filter(Boolean).join(' | ') || 'Unknown browser error');
     }, true);
 
     window.addEventListener('unhandledrejection', (event) => {
