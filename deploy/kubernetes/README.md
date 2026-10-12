@@ -1,7 +1,7 @@
 # Run bolt.diy on the local k3d cluster
 
 These manifests target the existing single-node k3d-openchoreo cluster. The
-app runs as one pod with a 250m CPU / 512Mi memory request and a 1 CPU / 1Gi
+app runs as one pod with a 250m CPU / 768Mi memory request and a 1 CPU / 1Gi
 memory limit. Project development runs inside WebContainers in each browser,
 so the cluster does not need a local model server or large build resources.
 No provider keys are stored in the image or Kubernetes manifests.
