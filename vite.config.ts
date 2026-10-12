@@ -141,30 +141,7 @@ export default defineConfig((config) => {
          * parallel with the client build, so the client manifest has to be
          * requested explicitly or React Router fails with ENOENT.
          */
-        build: {
-          manifest: true,
-          /*
-           * Keep the CommonJS browser shims and their transitive dependencies
-           * together. Splitting their generated module wrappers across chunks
-           * creates a cycle between Rolldown's runtime and the entry chunk,
-           * throwing before React mounts.
-           */
-          rolldownOptions: {
-            output: {
-              strictExecutionOrder: true,
-              codeSplitting: {
-                groups: [
-                  {
-                    name: 'browser-polyfills',
-                    test: /vite-plugin-node-polyfills|node_modules[\\/](buffer|process|base64-js|ieee754)[\\/]/,
-                    includeDependenciesRecursively: true,
-                    priority: 100,
-                  },
-                ],
-              },
-            },
-          },
-        },
+        build: { manifest: true },
       },
     },
     plugins: [
