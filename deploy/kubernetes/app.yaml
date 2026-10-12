@@ -28,7 +28,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: bolt-diy
-          image: ghcr.io/minac4/bolt.diy:cluster-deploy
+          image: ghcr.io/minac4/bolt.diy:sha-f67372f
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -117,3 +117,8 @@ spec:
       backendRefs:
         - name: bolt-diy
           port: 5173
+      # LLM responses can take several minutes for project generation. Keep
+      # the gateway from resetting the SSE stream while the model is working.
+      timeouts:
+        request: 10m
+        backendRequest: 10m
